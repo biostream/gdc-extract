@@ -103,8 +103,13 @@ def facets(endpoint, field, legacy=False):
     return result
 
 def project_list(args):
+    out = sys.stdout
+    if args.out is not None:
+        out = open(args.out, "w")
     for a in gdc_paginate(PROJECTS, legacy=args.legacy):
-        print(a['project_id'])
+        out.write(a['project_id'])
+        out.write("\n")
+    out.close()
 
 CASE_FIELDS = [
     'annotations',
@@ -133,12 +138,18 @@ CASE_FILE_FIELDS = [
 ]
         
 def case_list(args):
+    out = sys.stdout
+    if args.out is not None:
+        out = open(args.out, "w")
     if args.id:
         case = gdc_request(os.path.join(CASES, args.id), params={'expand': CASE_FIELDS}, legacy=args.legacy)
-        print(pformat(case))
+        out.write(pformat(case))
+        out.write("\n")
     else:
         for case in gdc_paginate(CASES, params={'expand': CASE_FIELDS}, legacy=args.legacy):
-            print json.dumps(case)
+            out.write(json.dumps(case))
+            out.write("\n")
+    out.close()
 
 def select_keys(m, keys):
     return {key: m[key] for key in keys}
@@ -163,8 +174,13 @@ def case_files(args):
     return tree
 
 def output_case_files(args):
-    print(json.dumps(case_files(args), indent=2, sort_keys=True))
-        
+    out = sys.stdout
+    if args.out is not None:
+        out = open(args.out, "w")
+    out.write(json.dumps(case_files(args), indent=2, sort_keys=True))
+    out.write("\n")
+    out.close()
+
 def case_tree(args):
     tree = {}
     # opts = lambda: None
@@ -321,6 +337,8 @@ METHODS = {
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    
+    parser.add_argument("--out", "-o", default="None")
 
     sub_parser = parser.add_subparsers()
     for m in METHODS:

@@ -3,9 +3,11 @@ cwlVersion: v1.0
 class: CommandLineTool
 hints:
   DockerRequirement:
-    dockerPull: gdc-extract:latest
+    dockerPull: biostream/gdc-extract:latest
 baseCommand:
   - /opt/gdc-scan.py
+  - "--out"
+  - gdc_case_scan.json
   - cases
   - list
 
@@ -14,6 +16,6 @@ inputs:
     type: [boolean, "null"]
 outputs:
   CASE_LIST:
-    type: stdout
-
-stdout: gdc_case_scan.json
+    type: File
+    outputBinding:
+      glob: gdc_case_scan.json
