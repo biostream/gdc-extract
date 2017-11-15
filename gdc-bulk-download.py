@@ -46,23 +46,30 @@ if __name__ == "__main__":
         ]
     }   
     
-    id_list = []
+    id_map = {}
     params = {}
     params['filters'] = json.dumps(query)
+    params['expand'] = "cases.samples,cases.project"
     while 'size' not in params or data['pagination']['page'] < data['pagination']['pages']:
         params['size'] = 1000
         req = requests.get(URL_BASE + "files", params=params)
         data = req.json()['data']
+        #print json.dumps(data, indent=4)
         for i in data['hits']:
-            id_list.append( i['id'] )
+            for case in i["cases"]:
+                for j in case["samples"]:
+                    id_map[i['id']] = {"sample" : j['sample_id'], "project" : case["project"]["project_id"]}
         params['from'] = data['pagination']['from'] + data['pagination']['count']
     
-    file_name = "test.tar.gz"
+    with open(args.output_name + ".map", "w") as handle:
+        handle.write("file_id\tproject_id\tsample_id\n")
+        for k, v in id_map.items():
+            handle.write("%s\t%s\t%s\n" % (k, v["project"], v["sample"]))
+    
     print('downloading')
     headers = {'Content-type': 'application/json'}
-    r = requests.post(URL_BASE + 'data', data=json.dumps({"ids" : id_list}), headers=headers, stream=True)
+    r = requests.post(URL_BASE + 'data', data=json.dumps({"ids" : id_map.keys()}), headers=headers, stream=True)
     with open(args.output_name, 'wb') as f:
         for chunk in r.iter_content(1024):
             f.write(chunk)
-        
 

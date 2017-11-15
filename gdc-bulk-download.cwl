@@ -4,6 +4,10 @@ class: CommandLineTool
 hints:
   DockerRequirement:
     dockerPull: biostream/gdc-extract:latest
+
+requirements:
+  - class: InlineJavascriptRequirement
+  
 baseCommand:
   - /opt/gdc-bulk-download.py
 
@@ -22,8 +26,13 @@ inputs:
       position: 3
 
 outputs:
-  FILE:
+  ARCHIVE:
     type: File
     outputBinding:
       glob: $(inputs.OUTPUT_NAME)
+
+  FILEMAP:
+    type: File
+    outputBinding:
+      glob: $(inputs.OUTPUT_NAME + ".map")
 
