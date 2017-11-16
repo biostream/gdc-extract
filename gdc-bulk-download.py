@@ -12,7 +12,8 @@ URL_BASE="https://gdc-api.nci.nih.gov/v0/"
 
 
 WORKFLOW_MAP = {
-    "fpkm" : "HTSeq - FPKM"
+    "fpkm" : "HTSeq - FPKM",
+    "cna" : "DNAcopy"
 }
 
 if __name__ == "__main__":
@@ -21,7 +22,7 @@ if __name__ == "__main__":
     parser.add_argument("project_id")
     parser.add_argument("output_name")
     args = parser.parse_args()
-    
+
     query = {
         "op":"and",
         "content" : [
@@ -41,11 +42,11 @@ if __name__ == "__main__":
                     "value":[
                         args.project_id
                     ]
-                }            
+                }
             }
         ]
-    }   
-    
+    }
+
     id_map = {}
     params = {}
     params['filters'] = json.dumps(query)
@@ -60,16 +61,15 @@ if __name__ == "__main__":
                 for j in case["samples"]:
                     id_map[i['id']] = {"sample" : j['sample_id'], "project" : case["project"]["project_id"]}
         params['from'] = data['pagination']['from'] + data['pagination']['count']
-    
+
     with open(args.output_name + ".map", "w") as handle:
         handle.write("file_id\tproject_id\tsample_id\n")
         for k, v in id_map.items():
             handle.write("%s\t%s\t%s\n" % (k, v["project"], v["sample"]))
-    
+
     print('downloading')
     headers = {'Content-type': 'application/json'}
     r = requests.post(URL_BASE + 'data', data=json.dumps({"ids" : id_map.keys()}), headers=headers, stream=True)
     with open(args.output_name, 'wb') as f:
         for chunk in r.iter_content(1024):
             f.write(chunk)
-
