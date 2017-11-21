@@ -16,6 +16,11 @@ WORKFLOW_MAP = {
     "cna" : "DNAcopy"
 }
 
+TYPE_MAP = {
+    "clinical" : "clinical_supplement",
+    "biospecimen" : "biospecimen_supplement"
+}
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("data_type")
@@ -23,29 +28,57 @@ if __name__ == "__main__":
     parser.add_argument("output_name")
     args = parser.parse_args()
 
-    query = {
-        "op":"and",
-        "content" : [
-            {
-                "op":"=",
-                "content":{
-                    "field":"analysis.workflow_type",
-                    "value":[
-                        WORKFLOW_MAP[args.data_type]
-                    ]
+    if args.data_type in WORKFLOW_MAP:
+        query = {
+            "op":"and",
+            "content" : [
+                {
+                    "op":"=",
+                    "content":{
+                        "field":"analysis.workflow_type",
+                        "value":[
+                            WORKFLOW_MAP[args.data_type]
+                        ]
+                    }
+                },
+                {
+                    "op":"=",
+                    "content":{
+                        "field":"cases.project.project_id",
+                        "value":[
+                            args.project_id
+                        ]
+                    }
                 }
-            },
-            {
-                "op":"=",
-                "content":{
-                    "field":"cases.project.project_id",
-                    "value":[
-                        args.project_id
-                    ]
+            ]
+        }
+    else:
+        query = {
+            "op":"and",
+            "content" : [
+                {
+                    "op":"=",
+                    "content":{
+                        "field":"type",
+                        "value":[
+                            TYPE_MAP[args.data_type]
+                        ]
+                    }
+                },
+                {
+                    "op":"=",
+                    "content":{
+                        "field":"cases.project.project_id",
+                        "value":[
+                            args.project_id
+                        ]
+                    }
                 }
-            }
-        ]
-    }
+            ]
+        }
+
+
+
 
     id_map = {}
     params = {}
@@ -58,14 +91,17 @@ if __name__ == "__main__":
         #print json.dumps(data, indent=4)
         for i in data['hits']:
             for case in i["cases"]:
-                for j in case["samples"]:
-                    id_map[i['id']] = {"sample" : j['sample_id'], "project" : case["project"]["project_id"]}
+                if "samples" in case:
+                    for j in case["samples"]:
+                        id_map[i['id']] = {"sample" : j['sample_id'], "project" : case["project"]["project_id"]}
+                else:
+                    id_map[i['id']] = {"project" : case["project"]["project_id"]}
         params['from'] = data['pagination']['from'] + data['pagination']['count']
 
     with open(args.output_name + ".map", "w") as handle:
         handle.write("file_id\tproject_id\tsample_id\n")
         for k, v in id_map.items():
-            handle.write("%s\t%s\t%s\n" % (k, v["project"], v["sample"]))
+            handle.write("%s\t%s\t%s\n" % (k, v["project"], v.get("sample", "")))
 
     print('downloading')
     headers = {'Content-type': 'application/json'}
