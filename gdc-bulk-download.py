@@ -6,6 +6,7 @@ import json
 import argparse
 
 import requests
+from subprocess import call
 from pprint import pformat, pprint
 
 URL_BASE="https://gdc-api.nci.nih.gov/v0/"
@@ -105,7 +106,38 @@ if __name__ == "__main__":
 
     print('downloading')
     headers = {'Content-type': 'application/json'}
-    r = requests.post(URL_BASE + 'data', data=json.dumps({"ids" : id_map.keys()}), headers=headers, stream=True)
-    with open(args.output_name, 'wb') as f:
-        for chunk in r.iter_content(1024):
-            f.write(chunk)
+    
+    def chunks(l, n):
+        for i in range(0, len(l), n):
+            yield l[i:i+n]
+
+    keychunks = chunks(id_map.keys(), 100)
+    paths = []
+    for index, ids in enumerate(keychunks):
+        r = requests.post(URL_BASE + 'data', data=json.dumps({"ids" : ids}), headers=headers, stream=True)
+        path = args.output_name + str(index)
+        paths.append(path)
+        with open(args.output_name + str(index), 'wb') as f:
+            for chunk in r.iter_content(1024):
+                f.write(chunk)
+
+    untar = "archive"
+
+    call(["mkdir", "archive"])
+    call(["mkdir", "manifest"])
+    for path in paths:
+        call(["tar", "xzvf", path, "-C", "archive/"])
+        call(["mv", "archive/MANIFEST.txt", "manifest/" + path])
+
+    call("cat manifest/* > archive/MANIFEST.txt", shell=True)
+
+    tar = "cd " + untar + " && " + "tar czvf ../" + args.output_name + " . && cd .."
+    print tar
+    call(tar, shell=True)
+
+    call(["cd", untar])
+    call(["tar", "czvf", "../" + args.output_name, "."])
+    call(["cd", ".."])
+    call(["rm", "-rf", untar])
+    call(["rm", "-rf", "manifest"])
+        
