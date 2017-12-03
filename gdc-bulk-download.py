@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     print('downloading')
     headers = {'Content-type': 'application/json'}
-    
+
     def chunks(l, n):
         for i in range(0, len(l), n):
             yield l[i:i+n]
@@ -135,9 +135,6 @@ if __name__ == "__main__":
     print tar
     call(tar, shell=True)
 
-    call(["cd", untar])
-    call(["tar", "czvf", "../" + args.output_name, "."])
-    call(["cd", ".."])
+    call(["tar", "czvf", "../" + args.output_name, "."], cwd=untar)
     call(["rm", "-rf", untar])
     call(["rm", "-rf", "manifest"])
-        
