@@ -117,7 +117,7 @@ if __name__ == "__main__":
         r = requests.post(URL_BASE + 'data', data=json.dumps({"ids" : ids}), headers=headers, stream=True)
         path = args.output_name + str(index)
         paths.append(path)
-        with open(args.output_name + str(index), 'wb') as f:
+        with open(path, 'wb') as f:
             for chunk in r.iter_content(1024):
                 f.write(chunk)
 
@@ -125,9 +125,9 @@ if __name__ == "__main__":
 
     call(["mkdir", "archive"])
     call(["mkdir", "manifest"])
-    for path in paths:
+    for index, path in enumerate(paths):
         call(["tar", "xzvf", path, "-C", "archive/"])
-        call(["mv", "archive/MANIFEST.txt", "manifest/" + path])
+        call(["mv", "archive/MANIFEST.txt", "manifest/" + str(index)])
 
     call("cat manifest/* > archive/MANIFEST.txt", shell=True)
 
@@ -135,9 +135,6 @@ if __name__ == "__main__":
     print tar
     call(tar, shell=True)
 
-    call(["cd", untar])
-    call(["tar", "czvf", "../" + args.output_name, "."])
-    call(["cd", ".."])
     call(["rm", "-rf", untar])
     call(["rm", "-rf", "manifest"])
         
