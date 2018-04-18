@@ -19,7 +19,8 @@ WORKFLOW_MAP = {
 
 TYPE_MAP = {
     "clinical" : "clinical_supplement",
-    "biospecimen" : "biospecimen_supplement"
+    "biospecimen" : "biospecimen_supplement",
+    "methylation" : "methylation_beta_value"
 }
 
 if __name__ == "__main__":
